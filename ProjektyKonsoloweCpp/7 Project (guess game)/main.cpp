@@ -1,0 +1,566 @@
+#include <iostream>
+#include <windows.h>
+#include <stdlib.h>
+#include <cstdlib>
+#include <time.h>
+#include <math.h>
+#include <fstream>
+
+using namespace std;
+
+void setUp();
+void startingGame();
+int generatingNumber(int min_range_of_num,int max_range_of_num);
+void newGame();
+void changeTheColorOfTheText(int num);
+void showAchievements();
+void showMenu();
+void gameSettings();
+void saveAchievements();
+void continueMenu();
+void viewSettings();
+void changeSettings();
+void saveChangesInFile();
+void saveBestAchievements();
+void assigningBestAchievements();
+void viewBestAchievements();
+
+int unknown_number, user_guess, the_num_of_user_tries, max_range_of_guessing_number, min_range_of_guessing_number;
+string gameVersion, user_name;
+bool saveingAchievements;
+clock_t start, stop;
+double game_time;
+int num_of_achieve = 0; // public scope of this variable because it is used in two different functions
+int numOfTries[10];
+float gameTime[10];
+string gameDate[10];
+
+// Author : Filip G.
+/////////////////////////////////
+int main(int argc, char** argv){
+	setUp(); //loads settings
+
+	srand(time(0)); //start the draw from the beginning of POSIX time
+
+	startingGame(); //start the game
+	getchar(); getchar();
+	return 0;
+}
+/////////////////////////////////
+
+void setUp(){
+	fstream Settings;
+	Settings.open("settings.txt",ios::in);
+	if(Settings.good()==false){
+		cout<<"File does not exist."<<endl;
+		exit(0);
+	}
+	string boolean_helply_variable;
+	string line;
+	int num_of_line=1;
+	while(getline(Settings, line)){
+		switch(num_of_line){
+			case 1: user_name = line;
+				break;
+			case 2: min_range_of_guessing_number = atoi(line.c_str());
+				break;
+			case 3: max_range_of_guessing_number = atoi(line.c_str());
+				break;
+			case 4: gameVersion = line;
+				break;
+			case 5: boolean_helply_variable = line;
+				break;
+			default:
+				break;
+		}
+	num_of_line++;
+	}
+	Settings.close();
+
+	if(boolean_helply_variable=="false"){
+		saveingAchievements=false;
+	}else if(boolean_helply_variable=="true"){
+		saveingAchievements=true;
+	}else{
+		cout<<"Error!"; exit(0);
+	}
+
+	if(user_name==""){ user_name = "user"; }
+
+	// assigns 10 the best achievements so far from .txt file
+	assigningBestAchievements();
+	
+	//cout<<numOfTries[0]<<" "<<gameTime[0]<<" "<<gameDate[0]<<endl; //for developers to test
+	// cout<<boolalpha<<saveingAchievements<<endl; //for developers to test
+}
+//////////
+void startingGame(){
+	cout<<"\tHello "<<user_name<<"! \t\t\t\t FGame v."<<gameVersion<<endl;
+
+	showMenu();
+}
+//////////
+void changeTheColorOfTheText(int num){
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), num);
+}
+/////////
+void showMenu(){
+	cout<<"\n-------- MAIN MENU --------"<<endl;
+	cout<<"Choose what you want to do."<<endl;
+	cout<<"1. Play a new game."<<endl;
+	cout<<"2. Show my all achievements so far."<<endl;
+	cout<<"3. Show my the best achievements."<<endl;
+	cout<<"4. Open settings."<<endl;
+	cout<<"5. Exit the program."<<endl;
+
+	char user_selection=' '; // so that it does not loop
+	cout<<"Your choice: "; cin>>user_selection;
+	cout<<endl;
+	switch(user_selection){
+		case '1':
+			newGame();
+			break;
+		case '2':
+			showAchievements();
+			break;
+		case '3':
+			/*cout<<"This option is currently disabled."<<endl;
+			showMenu();*/
+			viewBestAchievements();
+			break;
+		case '4':
+			gameSettings();
+			break;
+		case '5':
+			exit(0);
+			break;
+		default:
+			cout<<"Choose one of the options above!"<<endl;
+			Sleep(1500); showMenu(); 
+			break;
+	}
+}
+/////////
+int generatingNumber(int min_range_of_num, int max_range_of_num){
+	unknown_number = rand()%max_range_of_num+1;
+	if(unknown_number<min_range_of_num){
+		generatingNumber(min_range_of_num, max_range_of_num);
+	}
+	return unknown_number;
+}
+////////
+void newGame(){
+	generatingNumber(min_range_of_guessing_number,max_range_of_guessing_number);
+	system("cls"); //this is optional
+	cout<<"Your task is to guess the number between "<<min_range_of_guessing_number<<" and "<<max_range_of_guessing_number<<"."<<endl;
+	start = clock();
+
+	cout<<unknown_number<<endl; // for developers to test
+
+	user_guess = 0; // if you don't change the value of this variable, the while loop won't work in case the <unknown_numbre> will be the same two time in row
+	the_num_of_user_tries=1;
+	while(user_guess!=unknown_number){
+		cout<<"Enter you number: "; cin>>user_guess;
+		
+		if(user_guess==unknown_number){
+			stop = clock();
+			game_time = (double)(stop - start)/CLOCKS_PER_SEC;
+			game_time = (trunc(game_time*100))/100;
+			changeTheColorOfTheText(10);
+			cout<<"\n\aCongratulation you guess that number! You guessed that number in "<< the_num_of_user_tries <<" tires. It took you "<<game_time<<" seconds."<<endl;
+			changeTheColorOfTheText(15);
+			
+			if(saveingAchievements==false){
+				cout<<"You have disabled saving achievements in options.\n"<<endl;
+			}else if(saveingAchievements==true){
+				saveBestAchievements();
+				saveAchievements();
+			}else{
+				cout<<"Error!"; exit(0);
+			}
+			
+			char user_choice_newGame;
+			cout<<"Do you want to play again? (Y/N): "; cin>>user_choice_newGame;
+			if(user_choice_newGame=='Y'||user_choice_newGame=='y'){
+				newGame();
+			}
+			else{
+				char user_choice_menu;
+				cout<<"Do you want to go to the menu? (Y/N): "; cin>>user_choice_menu;
+				if(user_choice_menu=='Y'||user_choice_menu=='y'){
+					showMenu();
+				}
+				else{
+					cout<<"\nThank you for your time, see you again."<<endl;
+				}
+			}
+		}
+		else if(user_guess>unknown_number){
+			changeTheColorOfTheText(12);
+			cout<<"Your number is too large."<<endl;
+		}
+		else if(user_guess<unknown_number){
+			changeTheColorOfTheText(12);
+			cout<<"Your number is too small."<<endl;
+		}
+		else{
+			cout<<"Something went wrong."<<endl;
+		}
+		changeTheColorOfTheText(15);
+		the_num_of_user_tries++; //increment number of user's tries
+	}
+}
+///////////
+const string currentDateTime(){
+	time_t     now = time(0);
+	struct tm  tstruct;
+	char       buf[80];
+	tstruct = *localtime(&now);
+	strftime(buf, sizeof(buf), "%d-%m-%Y %X", &tstruct);
+	return buf;
+}
+// ^ source: stack overflow (https://stackoverflow.com/questions/997946/how-to-get-current-time-and-date-in-c)
+/////////
+void saveAchievements(){
+	fstream AchieveFile;
+	AchieveFile.open("achievements.txt",ios::out|ios::app);
+	
+	AchieveFile<<"The "<<user_name<<" guessed the number (this number is:"<<unknown_number<<") in "<<the_num_of_user_tries<<" tries in "<<game_time<<" seconds on "<<currentDateTime()<<endl;
+
+	AchieveFile.close();
+}
+//////////
+void showAchievements(){
+	cout<<"Your all achievements : "<<endl;
+
+	fstream AchieveFile;
+	AchieveFile.open("achievements.txt",ios::in); 
+
+	if(AchieveFile.good()==false){
+		cout<<"File does not exist."<<endl;
+		exit(0);
+	}
+	string line;
+	int num_of_line=1;
+	while(!AchieveFile.eof()){
+		getline(AchieveFile, line);
+		cout<<num_of_line<<"."<<line<<endl;
+		Sleep(50);
+		num_of_line++;
+	}
+	AchieveFile.close();
+	continueMenu();
+}
+/////////////
+/* testing phase (not ready to include) */
+/*
+e.g. 
+1. 1 tries in 1.43 s on DD-MM-YYYY hh:mm:ss
+2. 1 tries in 1.65 s on DD-MM-YYYY hh:mm:ss
+3. 2 tries in 1.76 s on DD-MM-YYYY hh:mm:ss
+*/
+void assigningBestAchievements(){
+	fstream BestAchieveFile;
+	BestAchieveFile.open("bestAchievements.txt",ios::in); 
+	if(BestAchieveFile.good()==false){
+		cout<<"File does not exist."<<endl;
+		exit(0);
+	}
+	string line;
+	int num_of_line=1;
+	num_of_achieve=0;
+	while(getline(BestAchieveFile, line)){
+		switch(num_of_line){
+			case 1: numOfTries[num_of_achieve] = atoi(line.c_str()); break;
+			case 2: gameTime[num_of_achieve] = atof(line.c_str()); break;
+			case 3: gameDate[num_of_achieve] = line; break;
+		}
+		if(num_of_line==3){
+			num_of_line=0; num_of_achieve++;
+		}
+		num_of_line++;
+	}
+	BestAchieveFile.close();
+	/*
+	cout<<endl;
+	for(int i=0; i<num_of_achieve; i++){
+		cout<<"numOfTries "<<i<<" index: "<<numOfTries[i]<<endl;
+		cout<<"gameTime "<<i<<" index: "<<gameTime[i]<<endl;
+		cout<<"gameDate "<<i<<" index: "<<gameDate[i]<<endl;
+	}
+	cout<<endl;
+	*/
+}
+///////////////
+void saveBestAchievements(){
+	fstream BestAchieveFile;
+	/*BestAchieveFile.open("bestAchievements.txt", ios::in);
+	string line; int num_of_line=1;
+	while(!BestAchieveFile.eof()){ getline(BestAchieveFile, line); num_of_line++;}
+	//cout<<"Num of lines: "<<num_of_line<<endl;
+	BestAchieveFile.close();*/
+// testing phase !!
+// mam tu wiele watpliwosci
+	// this if is true when file is empty 
+	if(numOfTries[0]==0){
+		// ten fragment do poprawy, mozna w for loop poniewaz niezaleznie z ktorym miejscu (<=10) jest przeczytana wartosc 0 tam dopisac do pliku aktualne osiagniecie
+		BestAchieveFile.open("bestAchievements.txt", ios::out|ios::app);
+		BestAchieveFile<<the_num_of_user_tries<<endl;
+		BestAchieveFile<<game_time<<endl;
+		BestAchieveFile<<currentDateTime()<<endl;
+		BestAchieveFile.close();
+	}else{
+		for(int i=0; i<num_of_achieve; i++){
+			if(the_num_of_user_tries<numOfTries[i]){
+				for(int j=9; j>i; j--){
+					numOfTries[j]=numOfTries[j-1];
+					gameTime[j]=gameTime[j-1];
+					gameDate[j]=gameDate[j-1];
+				}
+				numOfTries[i]=the_num_of_user_tries;
+				gameTime[i]=game_time;
+				gameDate[i]=currentDateTime();
+				break;
+				/*
+				int capacity;
+  				std::cin >> capacity; // true size
+  				int* arr = new int [capacity];
+				int size = capacity; // apparent size
+			  	for ( int i = 0; i < size; ++i ){arr[i] = i;} 
+				if ( 0 < size ) --size;
+  				for ( int i = 0; i < size; ++i ){std::cout << arr[i] << ' '; // See? The last one is "gone"}
+				*/
+			}
+			else if(the_num_of_user_tries==numOfTries[i]){
+				if(game_time<gameTime[i]){
+					for(int j=9; j>i; j--){
+						numOfTries[j]=numOfTries[j-1];
+						gameTime[j]=gameTime[j-1];
+						gameDate[j]=gameDate[j-1];
+					}
+					numOfTries[i]=the_num_of_user_tries;
+					gameTime[i]=game_time;
+					gameDate[i]=currentDateTime();
+					break;
+				}
+				else if(game_time==gameTime[i]){
+					// i zostaje na miejscu a odrazu za nim bd obecny wynik
+					for(int j=9; j>i+1; j--){
+						numOfTries[j]=numOfTries[j-1];
+						gameTime[j]=gameTime[j-1];
+						gameDate[j]=gameDate[j-1];
+					}
+					numOfTries[i+1]=the_num_of_user_tries;
+					gameTime[i+1]=game_time;
+					gameDate[i+1]=currentDateTime();
+					break;
+				}
+				/*else{
+					// in case that is less than 10 the best achievements
+					
+				}*/
+				break;
+			}
+		}
+	}
+	for(int i=0; i<num_of_achieve; i++){
+		cout<<"numOfTries "<<i<<" index: "<<numOfTries[i]<<endl;
+		cout<<"gameTime "<<i<<" index: "<<gameTime[i]<<endl;
+		cout<<"gameDate "<<i<<" index: "<<gameDate[i]<<endl;
+	}
+	// save changes in file
+	cout<<endl<<"num_of_achieve "<<num_of_achieve<<endl;
+	BestAchieveFile.open("bestAchievements.txt", ios::out);
+	for(int i=0; i<num_of_achieve; i++){
+		BestAchieveFile<<numOfTries[i]<<endl;
+		BestAchieveFile<<gameTime[i]<<endl;
+		BestAchieveFile<<gameDate[i]<<endl;
+	}
+	BestAchieveFile.close();
+}
+/////////////////KONIEC WATPLIWOSCI ;D///////////////////////////
+/////////////
+void viewBestAchievements(){
+	cout<<"Your the best achievements : "<<endl;
+	num_of_achieve=0; //must reset a variable value because in this sub function it is increased which causes sums value of this variable what causes bugs (e.g.: printed the value twice)
+	assigningBestAchievements();
+	for(int i=0; i<num_of_achieve+1; i++){
+		if(numOfTries[i]==0){continue;}
+		else{
+			cout<< i+1 <<". Number of tries "<<numOfTries[i]<<" in time "<<gameTime[i]<<" seconds on "<<gameDate[i]<<endl;
+		}
+	}
+	continueMenu();
+}
+/////////////
+void continueMenu(){
+	char user_choice;
+	cout<<"\nDo you want play that game?(Y/N): "; cin>>user_choice;
+	if(user_choice=='Y'||user_choice=='y'){
+		newGame();
+	}
+	else{
+		char user_second_choice;
+		cout<<"Do you want to go back to the menu?(Y/N): "; cin>>user_second_choice;
+		if(user_second_choice=='Y'||user_second_choice=='y'){
+			showMenu();
+		}
+		else{
+			cout<<"\nOkey, see you again."<<endl;
+		}
+	}
+}
+//////////
+void gameSettings(){
+	cout<<"What do you want?"<<endl;
+	cout<<"1. View settings."<<endl;
+	cout<<"2. Change settings."<<endl;
+	cout<<"3. Back to main menu."<<endl;
+	char user_choise;
+	cout<<"Your choice: ";cin>>user_choise;
+	cout<<endl;
+	switch(user_choise){
+		case '1': viewSettings(); break;
+		case '2': changeSettings(); break;
+		case '3': showMenu(); break;
+		default: cout<<"Choose one of the options above!\n"<<endl; gameSettings(); break;
+	}
+	cout<<endl;
+}
+/////////////
+void viewSettings(){
+	cout<<"Your settings: "<<endl;
+	fstream Settings;
+	Settings.open("settings.txt",ios::in);
+	if(Settings.good()==false){
+		cout<<"File does not exist."<<endl;
+		exit(0);
+	}
+	string line;
+	int num_of_line=1;
+	while(getline(Settings, line)){
+		switch(num_of_line){
+			case 1: cout<<num_of_line<<". User name: "<<line<<endl;
+				break;
+			case 2: cout<<num_of_line<<". The minimum range of drawing numbers in the game is: "<<line<<endl;
+				break;
+			case 3: cout<<num_of_line<<". The maximum range of drawing numbers in the game is: "<<line<<endl;
+				break;
+			case 4: cout<<num_of_line<<". Game version: "<<gameVersion<<endl;
+				break;
+			case 5: cout<<num_of_line<<". Saving achievements: "<<boolalpha<<saveingAchievements<<endl;
+				break;
+			default:
+				break;
+		}
+		num_of_line++;
+	}
+	Settings.close();
+	cout<<num_of_line<<". Clear all achievements."<<endl; // should subtract one because in file is 6 lines, but min and max value print in one line
+	cout<<num_of_line+1<<". Clear the console."<<endl; // should subtract one because in file is 6 lines, but min and max value print in one line
+	cout<<endl;
+	Sleep(500);
+	gameSettings();
+}
+//////////////
+void changeSettings(){
+	int num_user_set;
+	cout<<"To change any of the option select its number (select only one of them): "; cin>>num_user_set;
+
+	switch(num_user_set){
+		case 1: {
+			cout<<"To what name do you want change? "; cin>>user_name;
+			if(user_name=="none"){
+				user_name = "";
+			}
+			saveChangesInFile();
+		}
+			break;
+		case 2: {
+			cout<<"To which number would you change a min range of guessing number (min 0): "; cin>>min_range_of_guessing_number;
+			if((min_range_of_guessing_number>=0)&&(min_range_of_guessing_number<max_range_of_guessing_number)){
+				saveChangesInFile();
+			}else if((min_range_of_guessing_number<0)||(min_range_of_guessing_number>=max_range_of_guessing_number)){
+				cout<<"Enter a valid range!\n"<<endl;
+				changeSettings();
+			}else{
+				cout<<"Error!"<<endl;
+				exit(0);
+			}
+		}
+			break;
+		case 3: {
+			cout<<"To which number would you change a max range of guessing number (max 100): "; cin>>max_range_of_guessing_number;
+			if((max_range_of_guessing_number>min_range_of_guessing_number)||(max_range_of_guessing_number<100)){
+				saveChangesInFile();
+			}else if((max_range_of_guessing_number<2)||(max_range_of_guessing_number>100)){
+				cout<<"Enter a valid range!"<<endl;
+				changeSettings();
+			}else{
+				cout<<"Error!"<<endl;
+				exit(0);
+			}
+		}
+			break;
+		case 4:  {
+			cout<<"You are not authorized to change the version of the game."<<endl;
+		}
+			break;
+		case 5: {
+			if(saveingAchievements==false){
+				saveingAchievements=true;
+				cout<<"Now achievements are saved."<<endl;
+			}else if(saveingAchievements==true){
+				saveingAchievements=false;
+				cout<<"Now achievements are not saved."<<endl;
+			}else{
+				cout<<"Error!"; exit(0);
+			}
+			saveChangesInFile();
+		}
+			break;
+		case 6: {
+			char user_choice;
+			cout<<"Do you want to clear your all achievements? (Y/N)"; cin>>user_choice;
+			if(user_choice=='Y'||user_choice=='y'){
+				cout<<"Do you want to clear your the best achievements too? (Y/N)"; cin>>user_choice;
+				char user_second_choice;
+				if(user_second_choice=='Y'||user_second_choice=='y'){
+					char user_third_choice;
+					cout<<"Are you sure? All your best achievements will be lost."; cin>>user_third_choice;
+					if(user_third_choice=='Y'||user_third_choice=='y'){
+						fstream b_achieve;
+						b_achieve.open("bestAchievements.txt",ios::out);
+						b_achieve<<"";
+						b_achieve.close();
+					}
+				}
+				fstream achieve;
+				achieve.open("achievements.txt",ios::out);
+				achieve<<"";
+				achieve.close();
+			}
+		}
+			break;
+		case 7: {
+			system("cls");
+			Sleep(250);
+			startingGame();
+		}
+			break;
+		default: break;
+	}
+	Sleep(500);
+	gameSettings();
+}
+///////////////
+void saveChangesInFile(){
+	fstream settingsFile;
+	settingsFile.open("settings.txt",ios::out);
+	settingsFile<<user_name<<endl;
+	settingsFile<<min_range_of_guessing_number<<endl;
+	settingsFile<<max_range_of_guessing_number<<endl;
+	settingsFile<<gameVersion<<endl;
+	settingsFile<<boolalpha<<saveingAchievements<<endl;
+	settingsFile.close();
+}

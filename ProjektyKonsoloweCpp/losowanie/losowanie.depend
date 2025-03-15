@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1731422127 source:f:\_u£\jp_c++\losowanie\losowanie\main.cpp
+	<iostream>
+	<ctime>
+	<math.h>
+	<conio.h>
+	<cstdlib>
+	<unistd.h>
+
